@@ -5,6 +5,7 @@
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2/LinearMath/Matrix3x3.h>
 #include <tf2_ros/transform_broadcaster.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <geometry_msgs/msg/transform_stamped.hpp>
 
 #include <cmath>
@@ -40,7 +41,7 @@ public:
     tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(this);
 
 
-    intensity_threshold_ = 7200.0;
+    intensity_threshold_ = 7700.0;
   }
 
 private:
@@ -103,56 +104,108 @@ private:
       vel_publisher_->publish(twist);
 
       rclcpp::shutdown();
+
     }
   }
 
-  // Function to detect legs using laser intensities
-  void detect_legs(const sensor_msgs::msg::LaserScan::SharedPtr msg) {
-    std::vector<double> leg_positions_x;
-    std::vector<double> leg_positions_y;
+    void detect_legs(const sensor_msgs::msg::LaserScan::SharedPtr msg) {
+        std::vector<double> leg_positions_x;
+        std::vector<double> leg_positions_y;
+        std::vector<size_t> cluster_indices;
 
-    for (size_t i = 0; i < msg->intensities.size(); ++i) {
-      if (msg->intensities[i] >= intensity_threshold_) {
-        double angle = msg->angle_min + i * msg->angle_increment;
-        double range = msg->ranges[i];
+        bool in_cluster = false;
+        std::vector<double> cluster_x, cluster_y;
+        int low_intensity_counter = 0;
 
-        // Ignore invalid ranges
-        if (std::isinf(range) || std::isnan(range)) {
-          continue;
+        for (size_t i = 0; i < msg->intensities.size(); ++i) {
+            double intensity = msg->intensities[i];
+            double range = msg->ranges[i];
+
+            // Ignore invalid ranges
+            if (std::isinf(range) || std::isnan(range)) {
+                continue;
+            }
+
+            double angle = msg->angle_min + i * msg->angle_increment;
+            double x = range * std::cos(angle);
+            double y = range * std::sin(angle);
+
+            if (intensity >= intensity_threshold_) {
+                // Add point to current cluster
+                in_cluster = true;
+                cluster_x.push_back(x);
+                cluster_y.push_back(y);
+                RCLCPP_INFO(this->get_logger(), "Index: %zu, Range: %.2f, Intensity: %.2f", i, range, intensity);
+
+                low_intensity_counter = 0; // reset counter since we're still in a cluster
+            } else {
+                if (in_cluster) {
+                    low_intensity_counter++;
+                    if (low_intensity_counter == 1) {
+                        // As soon as we detect the first low-intensity point, end the current cluster
+                        in_cluster = false;
+
+                        // Calculate cluster centroid (average position)
+                        if (!cluster_x.empty() && !cluster_y.empty()) {
+                            double cluster_avg_x = std::accumulate(cluster_x.begin(), cluster_x.end(), 0.0) / cluster_x.size();
+                            double cluster_avg_y = std::accumulate(cluster_y.begin(), cluster_y.end(), 0.0) / cluster_y.size();
+
+                            leg_positions_x.push_back(cluster_avg_x);
+                            leg_positions_y.push_back(cluster_avg_y);
+
+                        }
+
+                        // Clear cluster data for the next one
+                        cluster_x.clear();
+                        cluster_y.clear();
+                        cluster_indices.clear();
+
+                        // Stop if we found 2 leg positions
+                        if (leg_positions_x.size() >= 2) {
+                            break;
+                        }
+                    }
+                }
+            }
         }
 
-        double x = range * std::cos(angle);
-        double y = range * std::sin(angle);
+        // If we detected 2 clusters (legs), publish transforms for the legs and midpoint
+        if (leg_positions_x.size() >= 2) {
+            double leg_1_x = leg_positions_x[0];
+            double leg_1_y = leg_positions_y[0];
+            double leg_2_x = leg_positions_x[1];
+            double leg_2_y = leg_positions_y[1];
+            double midpoint_x = (leg_1_x + leg_2_x) / 2.0;
+            double midpoint_y = (leg_1_y + leg_2_y) / 2.0;
 
-        leg_positions_x.push_back(x);
-        leg_positions_y.push_back(y);
-      }
+            RCLCPP_INFO(this->get_logger(), "Legs detected. Publishing transforms for frame_leg_1, frame_leg_2, and cart_frame.");
+
+            // Publish transform for leg 1
+            publish_leg_transform("frame_leg_1", leg_1_x, leg_1_y);
+
+            // Publish transform for leg 2
+            publish_leg_transform("frame_leg_2", leg_2_x, leg_2_y);
+
+            // Publish the transform at the midpoint for cart_frame
+            publish_transform(midpoint_x, midpoint_y);
+
+            // Switch to stopped mode
+            mode_ = "stopped";
+        } else {
+            RCLCPP_WARN(this->get_logger(), "Not enough legs detected.");
+            // Optionally, you can retry detection or handle failure
+        }
     }
 
-    if (leg_positions_x.size() >= 2) {
-      // Use the first two legs detected
-      double midpoint_x = (leg_positions_x[0] + leg_positions_x[1]) / 2.0;
-      double midpoint_y = (leg_positions_y[0] + leg_positions_y[1]) / 2.0;
 
-      RCLCPP_INFO(this->get_logger(), "Legs detected. Publishing transform at midpoint (%.2f, %.2f).", midpoint_x, midpoint_y);
 
-      // Publish the transform
-      publish_transform(midpoint_x, midpoint_y);
-
-      // Switch to stopped mode
-      mode_ = "stopped";
-    } else {
-      RCLCPP_WARN(this->get_logger(), "Not enough legs detected.");
-      // Optionally, you can retry detection or handle failure
-    }
-  }
 
   // Function to publish the transform at the midpoint
   void publish_transform(double x, double y) {
     geometry_msgs::msg::TransformStamped transform_stamped;
     transform_stamped.header.stamp = this->now();
-    transform_stamped.header.frame_id = "base_link"; // Parent frame
-    transform_stamped.child_frame_id = "cart_frame"; // Child frame
+    transform_stamped.header.frame_id = "robot_base_link";
+    transform_stamped.child_frame_id = "cart_frame";
 
     transform_stamped.transform.translation.x = x;
     transform_stamped.transform.translation.y = y;
@@ -168,6 +221,28 @@ private:
 
     RCLCPP_INFO(this->get_logger(), "Transform published successfully.");
   }
+
+  void publish_leg_transform(const std::string &frame_name, double x, double y) {
+        geometry_msgs::msg::TransformStamped transform_stamped;
+        transform_stamped.header.stamp = this->now();
+        transform_stamped.header.frame_id = "robot_base_link"; // Assuming base_link is the robot's parent frame
+        transform_stamped.child_frame_id = frame_name;   // Use the passed frame name
+
+        transform_stamped.transform.translation.x = x;
+        transform_stamped.transform.translation.y = y;
+        transform_stamped.transform.translation.z = 0.0;
+
+        // Set rotation to zero (no rotation)
+        tf2::Quaternion q;
+        q.setRPY(0, 0, 0);
+        transform_stamped.transform.rotation = tf2::toMsg(q);
+
+        // Publish the transform
+        tf_broadcaster_->sendTransform(transform_stamped);
+
+        RCLCPP_INFO(this->get_logger(), "Transform for %s published at position (%.2f, %.2f).", frame_name.c_str(), x, y);
+    }
+
 
   // Callback for odometry data to track current orientation
   void odom_callback(const nav_msgs::msg::Odometry::SharedPtr msg) {
@@ -215,7 +290,7 @@ private:
   void get_parameters() {
     obstacle_distance_ = this->get_parameter("obstacle").as_double();
     turning_degrees_ = this->get_parameter("degrees").as_int();
-    turning_speed_ = (turning_degrees_ > 0) ? 0.4 : -0.4;
+    turning_speed_ = (turning_degrees_ > 0) ? 0.35 : -0.35;
   }
 
   std::string mode_;

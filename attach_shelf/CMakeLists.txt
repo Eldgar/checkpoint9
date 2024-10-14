@@ -17,20 +17,42 @@ find_package(tf2_geometry_msgs REQUIRED)
 
 # Add the executable
 add_executable(pre_approach src/pre_approach.cpp)
+add_executable(pre_approach_v2 src/pre_approach_v2.cpp)
+add_executable(leg_detection src/leg_detection.cpp)
 
-# Link necessary libraries to the executable
-ament_target_dependencies(
-	pre_approach rclcpp 
-	sensor_msgs 
-	geometry_msgs 
-	nav_msgs
-	tf2
-	tf2_geometry_msgs
-	)
+ament_target_dependencies(pre_approach
+  rclcpp
+  sensor_msgs
+  geometry_msgs
+  nav_msgs
+  tf2
+  tf2_geometry_msgs
+)
+
+ament_target_dependencies(leg_detection
+  rclcpp
+  sensor_msgs
+  geometry_msgs
+  nav_msgs
+  tf2
+  tf2_ros
+  tf2_geometry_msgs
+)
+
+ament_target_dependencies(pre_approach_v2
+  rclcpp
+  sensor_msgs
+  geometry_msgs
+  nav_msgs
+  tf2
+  tf2_geometry_msgs
+)
 
 # Install the executable
 install(TARGETS
   pre_approach
+  pre_approach_v2
+  leg_detection
   DESTINATION lib/${PROJECT_NAME}
 )
 
