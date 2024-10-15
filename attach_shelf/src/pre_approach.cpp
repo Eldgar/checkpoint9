@@ -19,15 +19,15 @@ public:
     this->get_parameters();
 
     // Publisher for /robot/cmd_vel topic
-    vel_publisher_ = this->create_publisher<geometry_msgs::msg::Twist>("/diffbot_base_controller/cmd_vel_unstamped", 40);
+    vel_publisher_ = this->create_publisher<geometry_msgs::msg::Twist>("/diffbot_base_controller/cmd_vel_unstamped", 50);
 
     // Subscriber to /scan topic
     scan_subscriber_ = this->create_subscription<sensor_msgs::msg::LaserScan>(
-        "/scan", 20, std::bind(&PreApproach::scan_callback, this, std::placeholders::_1));
+        "/scan", 30, std::bind(&PreApproach::scan_callback, this, std::placeholders::_1));
 
     // Subscriber to /odom topic to get robot's current orientation
     odom_subscriber_ = this->create_subscription<nav_msgs::msg::Odometry>(
-        "/odom", 40, std::bind(&PreApproach::odom_callback, this, std::placeholders::_1));
+        "/odom", 50, std::bind(&PreApproach::odom_callback, this, std::placeholders::_1));
 
     // Initialize mode to moving forward
     mode_ = "moving_forward";
