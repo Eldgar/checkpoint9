@@ -96,7 +96,9 @@ private:
             twist.angular.z = 0.0;
             vel_publisher_->publish(twist);
             RCLCPP_INFO(this->get_logger(), "Final approach: %s", final_approach_ ? "true" : "false");
-
+            if (!final_approach_) {
+            
+            }
             // Check the final_approach argument and call the /approach_shelf service
             if (final_approach_) {
                 RCLCPP_INFO(this->get_logger(), "Calling /approach_shelf service with attach_to_shelf = true");
@@ -121,7 +123,6 @@ private:
                 }
             }
 
-            return;
         }
     }
 

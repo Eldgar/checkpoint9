@@ -76,7 +76,6 @@ private:
         RCLCPP_INFO(this->get_logger(), "Received request: attach_to_shelf = %s", request->attach_to_shelf ? "true" : "false");
         attach_to_shelf_ = request->attach_to_shelf;
 
-        // You can perform any initialization here if needed
 
         response->complete = true;  // Indicate that the request was successfully handled
     }
@@ -104,8 +103,8 @@ private:
 
     // Laser scan callback to detect legs
     void detect_legs(const sensor_msgs::msg::LaserScan::SharedPtr msg) {
-        if (!attach_to_shelf_) {
-            return;  // Do nothing if attach_to_shelf is false
+        if (!attach_to_shelf_) {        
+            return; 
         }
 
         std::vector<double> leg_positions_x;
@@ -137,7 +136,7 @@ private:
             double angle = msg->angle_min + i * msg->angle_increment;
             // Calculate the (x, y) coordinates in the robot's frame
             double x = range * std::cos(angle);
-            double y = -range * std::sin(angle);
+            double y = range * std::sin(angle);
 
             if (intensity >= intensity_threshold_) {
                 // Add point to current cluster
@@ -183,7 +182,7 @@ private:
             double leg_1_y = leg_positions_y[0];
             double leg_2_x = leg_positions_x[1];
             double leg_2_y = leg_positions_y[1];
-            double midpoint_x = (leg_1_x + leg_2_x) / 2.0;
+            double midpoint_x = (leg_1_x + leg_2_x) / 1.9;
             double midpoint_y = (leg_1_y + leg_2_y) / 2.0;
 
             // Publish transforms for legs and midpoint
@@ -200,7 +199,7 @@ private:
     void publish_transform(double x, double y) {
         geometry_msgs::msg::TransformStamped transform_stamped;
         transform_stamped.header.stamp = this->now();
-        transform_stamped.header.frame_id = "robot_base_link";
+        transform_stamped.header.frame_id = "robot_front_laser_base_link";
         transform_stamped.child_frame_id = "cart_frame";
 
         transform_stamped.transform.translation.x = x;
@@ -234,7 +233,6 @@ private:
             cmd_vel.angular.z = 0.0;
             vel_publisher_->publish(cmd_vel);
 
-            // Create a timer to stop after 1.5 seconds
             stop_timer_ = this->create_wall_timer(
                 std::chrono::milliseconds(2300), [this]() {
                     geometry_msgs::msg::Twist stop_cmd;

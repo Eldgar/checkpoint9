@@ -85,7 +85,7 @@ private:
             double angle = msg->angle_min + i * msg->angle_increment;
             // Calculate the (x, y) coordinates in the robot's frame
             double x = range * std::cos(angle);
-            double y = -range * std::sin(angle);
+            double y = range * std::sin(angle);
 
             if (intensity >= intensity_threshold_) {
                 // Add point to current cluster
@@ -157,7 +157,7 @@ private:
     void publish_leg_transform(const std::string &frame_name, double x, double y) {
         geometry_msgs::msg::TransformStamped transform_stamped;
         transform_stamped.header.stamp = this->now();
-        transform_stamped.header.frame_id = "robot_base_link";
+        transform_stamped.header.frame_id = "robot_front_laser_base_link";
         transform_stamped.child_frame_id = frame_name;
 
         transform_stamped.transform.translation.x = x;
@@ -176,7 +176,7 @@ private:
     void publish_transform(double x, double y) {
         geometry_msgs::msg::TransformStamped transform_stamped;
         transform_stamped.header.stamp = this->now();
-        transform_stamped.header.frame_id = "robot_base_link";
+        transform_stamped.header.frame_id = "robot_front_laser_base_link";
         transform_stamped.child_frame_id = "cart_frame";
 
         transform_stamped.transform.translation.x = x;

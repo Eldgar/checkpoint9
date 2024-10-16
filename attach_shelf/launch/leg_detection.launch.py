@@ -21,32 +21,15 @@ def generate_launch_description():
         description='Turning degrees parameter'
     )
     
-    final_approach_arg = DeclareLaunchArgument(
-        'final_approach',
-        default_value='false',
-        description='Flag to enable/disable final approach behavior'
-    )
 
     # Node for pre_approachv2
     pre_approach = Node(
         package='attach_shelf',  # Replace with your package name
-        executable='pre_approachv2',  # The name of your node executable
-        name='pre_approachv2',
-        parameters=[{
-            'obstacle': LaunchConfiguration('obstacle'),
-            'degrees': LaunchConfiguration('degrees'),
-            'final_approach': LaunchConfiguration('final_approach'),
-        }],
+        executable='leg_detection',  # The name of your node executable
+        name='leg_detection',
         output='screen'
     )
     
-    # Node for approach_service_server
-    approach_service_server = Node(
-        package='attach_shelf',
-        executable='approach_service_server',
-        name='approach_service_server',
-        output='screen',
-    )
 
     # Include rviz_launch.py
     rviz_launch = IncludeLaunchDescription(
@@ -63,8 +46,6 @@ def generate_launch_description():
     return LaunchDescription([
         obstacle_arg,
         degrees_arg,
-        final_approach_arg,
         pre_approach,
-        approach_service_server,
         rviz_launch
     ])

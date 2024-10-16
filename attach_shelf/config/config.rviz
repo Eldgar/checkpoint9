@@ -6,10 +6,11 @@ Panels:
       Expanded:
         - /Global Options1
         - /Status1
+        - /LaserScan1
         - /TF1
         - /TF1/Frames1
         - /TF1/Tree1
-      Splitter Ratio: 0.5
+      Splitter Ratio: 0.8147059082984924
     Tree Height: 553
   - Class: rviz_common/Selection
     Name: Selection
@@ -54,7 +55,7 @@ Visualization Manager:
       Position Transformer: XYZ
       Selectable: true
       Size (Pixels): 3
-      Size (m): 0.009999999776482582
+      Size (m): 0.03999999910593033
       Style: Flat Squares
       Topic:
         Depth: 5
@@ -70,7 +71,13 @@ Visualization Manager:
       Enabled: true
       Frame Timeout: 15
       Frames:
-        All Enabled: true
+        All Enabled: false
+        cart_frame:
+          Value: true
+        frame_leg_1:
+          Value: true
+        frame_leg_2:
+          Value: true
         odom:
           Value: true
         robot_base_docking_contact_link:
@@ -86,37 +93,44 @@ Visualization Manager:
         robot_front_laser_base_link:
           Value: true
         robot_omni_backwheel_link:
-          Value: true
+          Value: false
         robot_omni_front_leftwheel_link:
-          Value: true
+          Value: false
         robot_omni_front_rightwheel_link:
-          Value: true
+          Value: false
         robot_top_cover_link:
-          Value: true
+          Value: false
       Marker Scale: 1
       Name: TF
       Show Arrows: true
       Show Axes: true
-      Show Names: false
+      Show Names: true
       Tree:
         odom:
-          robot_base_footprint:
-            robot_base_link:
-              robot_evelator_base_link:
-                {}
-              robot_front_cover_link:
-                robot_base_docking_contact_link:
-                  {}
-              robot_front_laser_base_link:
-                {}
-              robot_omni_backwheel_link:
-                {}
-              robot_omni_front_leftwheel_link:
-                {}
-              robot_omni_front_rightwheel_link:
-                {}
-            robot_top_cover_link:
+          {}
+        robot_base_footprint:
+          robot_base_link:
+            cart_frame:
               {}
+            frame_leg_1:
+              {}
+            frame_leg_2:
+              {}
+            robot_evelator_base_link:
+              {}
+            robot_front_cover_link:
+              robot_base_docking_contact_link:
+                {}
+            robot_front_laser_base_link:
+              {}
+            robot_omni_backwheel_link:
+              {}
+            robot_omni_front_leftwheel_link:
+              {}
+            robot_omni_front_rightwheel_link:
+              {}
+          robot_top_cover_link:
+            {}
       Update Interval: 0
       Value: true
   Enabled: true
@@ -165,7 +179,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 5.3886847496032715
+      Distance: 3.6193575859069824
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
