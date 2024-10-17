@@ -68,16 +68,18 @@ private:
 
 
     bool reached_cart_frame_ = false;
-    bool attach_to_shelf_ = false;  // Flag for whether to perform the final approach
+    bool attach_to_shelf_ = false;
  
 // Service callback function
     void handle_service(const std::shared_ptr<attach_shelf::srv::GoToLoading::Request> request,
                         std::shared_ptr<attach_shelf::srv::GoToLoading::Response> response) {
         RCLCPP_INFO(this->get_logger(), "Received request: attach_to_shelf = %s", request->attach_to_shelf ? "true" : "false");
         attach_to_shelf_ = request->attach_to_shelf;
-
-
-        response->complete = true;  // Indicate that the request was successfully handled
+        response->complete = true;
+        if (!attach_to_shelf_ && response->complete) {
+            RCLCPP_INFO(this->get_logger(), "Task complete, shutting down...");
+            rclcpp::shutdown();
+        }
     }
 
     // Odometry callback to track robot's current yaw (orientation)
@@ -114,8 +116,8 @@ private:
         std::vector<double> cluster_x, cluster_y;
         int low_intensity_counter = 0;
 
-        double min_range = std::numeric_limits<double>::infinity();  // Initialize with infinity
-        size_t min_range_index = 0;  // To store the index of the shortest distance
+        double min_range = std::numeric_limits<double>::infinity(); 
+        size_t min_range_index = 0;
 
         for (size_t i = 0; i < msg->ranges.size(); ++i) {
             double intensity = msg->intensities[i];
@@ -144,7 +146,7 @@ private:
                 cluster_x.push_back(x);
                 cluster_y.push_back(y);
 
-                low_intensity_counter = 0;  // reset counter since we're still in a cluster
+                low_intensity_counter = 0;
             } else {
                 if (in_cluster) {
                     low_intensity_counter++;
@@ -216,35 +218,19 @@ private:
 
     void move_to_transform(double x, double y) {
         geometry_msgs::msg::Twist cmd_vel;
-        double tolerance = 0.05;
+        double tolerance = 0.025;
 
         // Check if within the tolerance range
-        if (std::abs(x) > tolerance || std::abs(y) > tolerance) {
-            cmd_vel.linear.x = 0.2;  // Move forward
-            cmd_vel.angular.z = 0.0; // No rotation for now
+        if (!(x >= (-0.3 - tolerance) && x <= (-0.3 + tolerance))) {
+            cmd_vel.linear.x = 0.2;
+            cmd_vel.angular.z = 0.0; 
             RCLCPP_INFO(this->get_logger(), "Moving towards the cart_frame (%.2f, %.2f).", x, y);
             vel_publisher_->publish(cmd_vel);
         } else {
-            // Robot has reached the cart frame
-            RCLCPP_INFO(this->get_logger(), "Reached the cart_frame. Moving forward for 1.5 seconds more.");
-
-            // Keep moving forward for 1.5 seconds after reaching the cart frame
-            cmd_vel.linear.x = 0.2;
+            cmd_vel.linear.x = 0.0;
             cmd_vel.angular.z = 0.0;
-            vel_publisher_->publish(cmd_vel);
-
-            stop_timer_ = this->create_wall_timer(
-                std::chrono::milliseconds(2300), [this]() {
-                    geometry_msgs::msg::Twist stop_cmd;
-                    stop_cmd.linear.x = 0.0;
-                    stop_cmd.angular.z = 0.0;
-                    vel_publisher_->publish(stop_cmd);
-                    RCLCPP_INFO(this->get_logger(), "Stopped moving after reaching cart_frame.");
-                    stop_timer_->cancel();
-                });
-
             stop_timer2_ = this->create_wall_timer(
-                std::chrono::milliseconds(2900), [this]() {
+                std::chrono::milliseconds(2700), [this]() {
                     if (stop_timer_ && !stop_timer_->is_canceled()) {
                         stop_timer_->cancel();
                     }

@@ -97,7 +97,8 @@ private:
             vel_publisher_->publish(twist);
             RCLCPP_INFO(this->get_logger(), "Final approach: %s", final_approach_ ? "true" : "false");
             if (!final_approach_) {
-            
+                rclcpp::shutdown();
+                return;
             }
             // Check the final_approach argument and call the /approach_shelf service
             if (final_approach_) {

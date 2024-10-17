@@ -72,24 +72,18 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: false
-        cart_frame:
-          Value: true
-        frame_leg_1:
-          Value: true
-        frame_leg_2:
-          Value: true
         odom:
           Value: true
         robot_base_docking_contact_link:
-          Value: true
+          Value: false
         robot_base_footprint:
-          Value: true
+          Value: false
         robot_base_link:
           Value: true
         robot_evelator_base_link:
-          Value: true
+          Value: false
         robot_front_cover_link:
-          Value: true
+          Value: false
         robot_front_laser_base_link:
           Value: true
         robot_omni_backwheel_link:
@@ -110,12 +104,6 @@ Visualization Manager:
           {}
         robot_base_footprint:
           robot_base_link:
-            cart_frame:
-              {}
-            frame_leg_1:
-              {}
-            frame_leg_2:
-              {}
             robot_evelator_base_link:
               {}
             robot_front_cover_link:
@@ -179,7 +167,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 3.6193575859069824
+      Distance: 3.0494132041931152
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
